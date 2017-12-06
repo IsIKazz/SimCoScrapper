@@ -1,0 +1,6 @@
+20171022:
+time in h: 0.022569444444444444 with one thread and sample xls.
+time in h: 0.013930555555555555 with two thread and sample xls.
+time in h: 0.011994444444444445 with four thread and sample xls.
+time in h: 0.012680555555555556 with eight thread and sample xls.
+time in h: 0.04861111111111111 with two threads downloading full HTML 100 patents pandas

@@ -84,7 +84,7 @@ class Scraper(object):
             print(i, Date_before)
             driver.get(url)
             
-            randNR = 1 + np.matlib.rand(1,1)*waiting_time
+            randNR = 1 + numpy.matlib.rand(1,1)*waiting_time
             time.sleep(randNR)
           
             filename = max([download_dir +"\\"+f for f in os.listdir(download_dir)], key=os.path.getctime)

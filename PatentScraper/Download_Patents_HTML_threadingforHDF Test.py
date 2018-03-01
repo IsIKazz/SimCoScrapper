@@ -39,12 +39,12 @@ class myThread (threading.Thread):
         self.scrapList = scrapList
         self.name = name
         
-        print ("Initializing " + self.name)
+        logging.debug("Initializing " + self.name)
         
     def run(self):
-        print ("Starting " + self.name)
+        logging.debug("Starting " + self.name)
         self._return = patentReader().openURL(self.scrapList,self.threadID, self.name)
-        print ("Exiting " + self.name)
+        logging.debug("Exiting " + self.name)
     def join(self):
         threading.Thread.join(self)
         return self._return
@@ -53,8 +53,7 @@ class patentReader():
     def __init__(self):
         cwd = os.getcwd()        
         #System.setProperty("webdriver.chrome.driver", cwd+"//chromedriver.exe");
-        with open('my_file.html', 'r', encoding='utf-8') as fo:
-             self.cHTML=fo.read()  
+        
 
     def openURL(self,pd_Patents,threadID='1', threadName="Thread"):
         nrPatents = len(pd_Patents)
@@ -78,7 +77,7 @@ class patentReader():
                 try:
                     WebDriverWait(self.driver, 3).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'h3[id=legalEvents] + div.responsive-table.style-scope.patent-result div.tbody')))
                 except TimeoutException:
-                    logging.debug("no legal Event")
+                    logging.warn("no legal Event")
                     pass
                 currentHTML = self.driver.find_element_by_tag_name('body').get_attribute('innerHTML')  
                 #currentHTML = self.cHTML
@@ -150,8 +149,8 @@ if __name__ == '__main__':
      
     patent_info_store = store['Patent_info']
     
-    #shortening PD for debugging
-    #patent_info_store = patent_info_store.iloc[0:100]
+    '''shortening PD for debugging'''
+    patent_info_store = patent_info_store.iloc[0:100]
 
      
     # ['id', 'title', 'assignee', 'inventor/author', 'priority date', 'filing/creation date', 'publication date', 'grant date', 'result link']
@@ -167,7 +166,7 @@ if __name__ == '__main__':
 #     Company = df.iloc[:,2]
 #     Id = df.iloc[:,0]
 #     URL = df.iloc[:4,8]
-    print("Number of Patents to load: ", patent_info_store.shape[0])
+    logging.info("Number of Patents to load: {}".format(patent_info_store.shape[0]))
     
     #Split the patents into a maximum number to save memory
     

@@ -6,7 +6,7 @@ Created on Oct 19, 2017
 
 import datetime
 from pandas.io.pytables import HDFStore
-from FirmScraper.Scraper import Scraper
+import Scraper
 import os
 
 

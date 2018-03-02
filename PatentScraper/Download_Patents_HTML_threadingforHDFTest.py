@@ -3,7 +3,7 @@ import os
 import sys
 import threading
 import time
-
+import urllib
 
 
 from pandas.io.pytables import HDFStore
@@ -79,8 +79,15 @@ class patentReader():
                 except TimeoutException:
                     logging.warn("no legal Event")
                     pass
-                currentHTML = self.driver.find_element_by_tag_name('body').get_attribute('innerHTML')  
-                #currentHTML = self.cHTML
+                #currentHTML = self.driver.find_element_by_tag_name('body').get_attribute('innerHTML')  
+                
+                
+                fp = urllib.request.urlopen(row["result link"])
+                
+                mybytes = fp.read()
+
+                currentHTML = mybytes.decode("utf8")
+                fp.close()
 #                 tz=pd.read_html(currentHTML)
 #                 
 #                 cwd = os.getcwd()

@@ -32,7 +32,11 @@ class myThread (threading.Thread):
         
     def run(self):
         logging.debug("Starting " + self.name)
-        self._return = CitesFromPatentReader.CitesFromPatentReader().openURL(self.scrapList,self.threadID, self.name)
+        try:
+            self._return = CitesFromPatentReader.CitesFromPatentReader().openURL(self.scrapList,self.threadID, self.name)
+        except Exception as e: 
+            logging.warn(e)
+            self._return = None
         logging.debug("Exiting " + self.name)
     def join(self):
         threading.Thread.join(self)
@@ -41,42 +45,43 @@ class myThread (threading.Thread):
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO,
-                    format='(%(threadName)-10s) %(message)s',
+                    format='%(asctime)-15s (%(threadName)-10s) %(message)s',
                     )  
     file = "Sample"
     overall_start = time.time()
     'load patents from Company_patents:'
     
     cwd= os.getcwd()
-    patentfile = cwd + '\\patents.h5'
-    nrThreads = 1
+    patentfile = cwd + '\\Patent_info_12_8_2013-16_8_2013.h5'
+    resultFile = cwd + '\\HDFStore\\Cites.h5'
+    nrThreads = 4
      
-    store = HDFStore(patentfile, complevel=4)
-     
-    patent_info_store = store['Patent_info']
-    
-    '''shortening PD for debugging'''
-    patent_info_store = patent_info_store.iloc[0:10]
-
-     
+    with HDFStore(patentfile, complevel=8) as store:
+        patent_info_store = store['Patent_info']
+        patent_info_store = patent_info_store.set_index('Patent_id')
+        
+        '''shortening PD for debugging'''
+        #patent_info_store = patent_info_store.iloc[0:30]
     # ['id', 'title', 'assignee', 'inventor/author', 'priority date', 'filing/creation date', 'publication date', 'grant date', 'result link']
-    count_Patents = len(patent_info_store)
-   
-    store.close()
+        count_Patents = len(patent_info_store)
+        store.close()
     
-    
-    
-#     Data = pd.ExcelFile(file+'.xlsx')
-#     df = Data.parse('Sheet1')
-#     count_Patents = df.shape[0]
-#     Company = df.iloc[:,2]
-#     Id = df.iloc[:,0]
-#     URL = df.iloc[:4,8]
-    logging.info("Number of Patents to load: {}".format(patent_info_store.shape[0]))
-    
+    try:
+        with HDFStore(resultFile, complevel=8) as store:
+            initalPD = store['pdCites']
+            visitedPatent = initalPD.index.drop_duplicates(keep='last')   
+            logging.info("Number of Patents total: {}".format(patent_info_store.shape[0]))
+            patent_info_store = patent_info_store.drop(visitedPatent)            
+            store.close()
+        
+    except KeyError:
+        initalPD = pd.DataFrame() 
+        
+    logging.info("Number of Patents to be scraped: {}".format(patent_info_store.shape[0]))
+    nrRecords = 0
     #Split the patents into a maximum number to save memory
     
-    for __,patent_info in patent_info_store.groupby(np.arange(len(patent_info_store))//1000):    
+    for __,patent_info in patent_info_store.groupby(np.arange(len(patent_info_store))//500):    
         #Split all URLs in equal chunks based on the number of expected threads    
         
         urlLists = list()
@@ -88,47 +93,34 @@ if __name__ == '__main__':
         allThreads = list()
         pdCites = pd.DataFrame()
         
-        for i in range(0,nrThreads):
+        for i in range(nrThreads):
             allThreads.append(myThread(i, "Thread-" + str(i), urlLists[i])) 
         
         for thread in allThreads:
             thread.start()  
         
         for thread in allThreads:  
-            pdCites = pdCites.append(thread.join())   
+            pdCites = pdCites.append(thread.join()) 
         
         
+        nrRecords = nrRecords + len(patent_info)
+        hours, rem = divmod(time.time() - overall_start, 3600)
+        minutes, seconds = divmod(rem, 60)
+        logging.info('time in h: {:0>2}:{:0>2}:{:05.2f} for {} of {} records '.format(int(hours),int(minutes),seconds,nrRecords,len(patent_info_store)))
         
-        #pdCites = pdCites.reset_index(drop=True)
-        
-        #pdCites["publication date"] = pd.to_datetime(pdCites["publication date"])
-        
-       #pdCites.index = pdCites["publication date"]
-        
-        
-        
-        logging.info(pdCites.to_string())
+        logging.debug(pdCites.to_string())
             
         if len(pdCites.index)>0: 
-    
-            htmlfile = cwd + '\\HDFStore\\Cites.h5'
             #
             
             #Appends the new records to the old records and drops duplicates 
-            
-            
-            try:
-                    with HDFStore(htmlfile, complevel=8) as store:
-                        storePD = store['pdCites']
-                        storePD= storePD.append(df)
-                        store.close()
-                    os.remove(htmlfile)
-            except KeyError:
-                    storePD = df       
-             
+
+            storePD= initalPD.append(pdCites)                        
+            os.remove(resultFile)
+           
             storePD = storePD.drop_duplicates(keep='last')   
-            storePD = storePD.reset_index(drop=True)
-            with HDFStore(htmlfile, complevel=8) as store2:
+            #storePD = storePD.reset_index(drop=True)
+            with HDFStore(resultFile, complevel=8) as store2:
                 store2['pdCites'] = storePD
                 store2.close()
     

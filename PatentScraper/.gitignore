@@ -1,2 +1,9 @@
 *.csv
 /htmlStore/
+/DataVisualizer.py
+/Patent_info_12_8_2013-16_8_2013.h5
+/my_filehtml.html
+/my_filejson.html
+/output1.html
+/patents.h5
+/snippet.py

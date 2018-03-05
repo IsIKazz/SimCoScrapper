@@ -141,7 +141,7 @@ class patentReader():
             
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO,
+    logging.basicConfig(level=logging.DEBUG,
                     format='(%(threadName)-10s) %(message)s',
                     )  
     file = "Sample"
